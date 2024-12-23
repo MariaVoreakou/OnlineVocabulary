@@ -1,0 +1,62 @@
+﻿@{
+    ViewData["Title"] = "Book Units";
+}
+
+
+<script>
+    function Click(id, action) {
+        if (action !== "EditUnit" || confirm('Are you sure you want to edit this unit?')) {
+        $.ajax({
+          url: ('@Url.Action("REPLACE", "Books")'.replace('REPLACE', action)),
+          type: 'POST',
+          data: { BookId: id }
+        }).done(function () {
+          if (action === 'Archive'){
+            document.getElementById('tr_' + id).style.display = "none";
+          } else if (action === 'Complete') {
+            document.getElementById('td_complete_' + id).style.display = "";
+            document.getElementById('td_incomplete_' + id).style.display = "none";
+          } else if (action === 'Incomplete') {
+            document.getElementById('td_complete_' + id).style.display = "none";
+            document.getElementById('td_incomplete_' + id).style.display = "";
+          }
+        });
+      }
+    }
+</script>
+
+<h1>@ViewData["Title"]</h1>
+
+<div>
+    <table class="table-books">
+        <tr class="header">
+            <td>Book</td>
+            <td>Unit</td>
+            <td>Sub Unit</td>
+            <td>Action</td>
+        </tr>
+        @if (Model != null)
+        {
+            var added = false;
+            foreach (var sum in Model)
+            {
+                <tr id="tr_@sum.UnitId">
+                    <td id="@sum.BookId">@sum.Book.BookName</td>
+                    <td id="@sum.UnitName">@sum.UnitName</td>
+                    <td id="@sum.UnitId">@sum.SubUnitName</td>
+                    <td><button class="delete-button" onclick="Click(@sum.UnitId,'EditUnit')"></button></td>
+                </tr>
+                added = true;
+            }
+            if (!added)
+            {
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td style="display:none;"></td>
+                    <td>No Books found.</td>
+                </tr>
+            }
+        }
+    </table>
+</div>

@@ -1,0 +1,424 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+<!--Script for opening forms-->
+<script>
+    function openBook() {
+        document.getElementById("bookform").className = "enabled";
+    }
+    function openUnit() {
+        document.getElementById("unitform").className = "enabled";
+    }
+    function openWord() {
+        document.getElementById("wordform").className = "enabled";
+        booksDropDown();
+    }
+</script>
+
+<!--Add Subunits (InsertUnit())-->
+<script type="text/javascript">
+    counter = 1; //Initial field counter is 1
+    function AddField() {
+        var maxField = 50; //Input fields increment limitation
+        var wrapper = $(".field_wrapper"); //Input field wrapper
+        var addButton = $(".add_button"); //Add button selector
+        //New input field html
+        var fieldHTML = '<div class="div-subunit"><input type="text" name="subUnitName" value=""/> <a href="javascript:void(0);" class="add_button" title="Add field"><img src="/images/add.png" width="30" /></a> <a href="javascript:void(0);" class="remove_button"><img src="/images/minus.png" width="30" /></a></div>';
+
+        //Once add button is clicked
+        addButton.off('click');
+        addButton.click(function () {
+            console.log("Inside Anonymous function");
+            //Check maximum number of input fields
+            if (counter < maxField) {
+                console.log("Inside Anonymous function counter is " + counter);
+                counter++; //Increment field counter
+                var InternalWrapper = $(wrapper); //Input field wrapper
+                $(InternalWrapper).append(fieldHTML); //Add field html
+            }
+            AddField();
+        });
+
+        //Once remove button is clicked
+        $(wrapper).on('click', ".remove_button", function (e) {
+            e.preventDefault();
+            $(this).parent('div').remove(); //Remove field html
+            counter--; //Decrement field counter
+        });
+    }
+    $(document).ready(function () { AddField() });
+</script>
+
+<!--Add Word definitions (AddWord())-->
+<script type="text/javascript">
+    counter = 1; //Initial field counter is 1
+    function AddDefinitionField() {
+        var maxField = 50; //Input fields increment limitation
+        var wrapper = $(".definition-div"); //Input field wrapper
+        var addButton = $(".definition_add_button"); //Add button selector
+        //New input field html
+        var fieldHTML = '<div class="definition-div"><table class="wordtype-table"><tbody> <tr> <td> <fieldset> <select id="wordTypes" name="wordTypeId"> @if (Model !=null){var added=false; <option value="SelectWordType">Select Word Type</option> foreach (var wt in Model.WordType){<option value="@wt.WordTypeId">@wt.WordTypeName</option> added=true;}if (!added){<p>No Word Types found.</p>}}</select> </fieldset> </td><td> <a href="javascript:void(0);" class="definition_add_button" title="Add field"><img src="/images/add.png" width="30"/></a><a href="javascript:void(0);" class="definition_remove_button"><img src="/images/minus.png" width="30" /></a> </td></tr><tr> <td> <div> <textarea cols="36" rows="2" name="comment" form="defform" placeholder="Definition"></textarea> </div></td><td> <textarea cols="36" rows="2" name="comment" form="usrform" placeholder="Example"></textarea> </td></tr></tbody> </table> </div>';
+
+        //Once add button is clicked
+        addButton.off('click');
+        addButton.click(function () {
+            console.log("Inside Anonymous function");
+            //Check maximum number of input fields
+            if (counter < maxField) {
+                console.log("Inside Anonymous function counter is " + counter);
+                counter++; //Increment field counter
+                var outerWrapper = $(".outer-definition-div"); //Input field wrapper
+                $(outerWrapper).append(fieldHTML); //Add field html
+            }
+            AddDefinitionField();
+        });
+
+        //Once remove button is clicked
+        $(wrapper).on('click', ".definition_remove_button", function (e) {
+            e.preventDefault();
+            $(this).parent().parent().parent().parent().parent().remove(); //Remove field html
+            counter--; //Decrement field counter
+        });
+    }
+
+    $(document).ready(function () { AddDefinitionField() });
+</script>
+
+<!--Script for Dropdowns (Insert Word())-->
+<script>
+    function AjaxCall(url, data, type) {
+        return $.ajax({
+            url: url,
+            type: type ? type : 'GET',
+            data: data,
+            contentType: 'application/json'
+        });
+    }
+
+    function booksDropDown() {
+        AjaxCall('@Url.Action("GetBooksJson", "Tasks")', null).done(function (response) {
+            if (response.length > 0) {
+                $('#wordSelectBooks').html('');
+                var options = '';
+                options += '<option value="SelectBook">Select Book</option>';
+                for (var i = 0; i < response.length; i++) {
+                    options += '<option value="' + response[i].bookId + '">' + response[i].bookName + '</option>';
+                }
+                $('#wordSelectBooks').append(options);
+                unitsDropDown();
+            }
+        }).fail(function (error) {
+            alert('1st Alert ' + error.StatusText);
+        });
+        clearAll();
+    }
+
+    function unitsDropDown() {
+    $('#wordSelectBooks').on("change", function () {
+        var bookId = $('#wordSelectBooks').val();
+        var obj = { bookId: bookId };
+
+        AjaxCall('@Url.Action("GetUnitsJson", "Tasks")', obj, null).done(function (response) {
+                if (response) {
+                    $('#wordSelectUnitName').html('');
+                    var options = '';
+                    options += '<option value="SelectUnit">Select Unit</option>';
+                    for (var i = 0; i < response.length; i++) {
+                        options += '<option value="' + response[i].unitName + '">' + response[i].unitName + '</option>';
+                    }
+                    $('#wordSelectUnitName').append(options);
+                    subUnitsDropDown();
+                }
+            }).fail(function (error) {
+                alert(error.StatusText);
+            });
+        clearAll();
+    });
+    }
+
+    function subUnitsDropDown() {
+    $('#wordSelectUnitName').on("change", function () {
+        var unitName = $('#wordSelectUnitName').val();
+        var bookId = $('#wordSelectBooks').val();
+        var obj = { unitName: unitName,  bookId: bookId};
+
+        AjaxCall('@Url.Action("GetSubUnitsJson", "Tasks")', obj, null).done(function (response) {
+                if (response) {
+                    $('#wordSelectSubUnitName').html('');
+                var options = '';
+                options += '<option value="SelectSubUnit">Select SubUnit</option>';
+                for (var i = 0; i < response.length; i++) {
+                    options += '<option value="' + response[i].unitId + '">' + response[i].subUnitName + '</option>';
+                }
+                $('#wordSelectSubUnitName').append(options);
+            }
+        }).fail(function (error) {
+            alert(error.StatusText);
+        });
+        clearAll();
+    });
+    }
+
+    function clearAll() {
+        $('#wordSelectBooks').on("change", function () {
+            var bookSelection = $('#wordSelectBooks').val();
+            if (bookSelection == "SelectBook") {
+                $('#wordSelectUnitName').html('');
+                var options = '';
+                options += '<option value="SelectUnit">Select Unit</option>';
+                $('#wordSelectUnitName').append(options);
+
+                $('#wordSelectSubUnitName').html('');
+                var subOptions = '';
+                subOptions += '<option value="SelectSubUnit">Select SubUnit</option>';
+                $('#wordSelectSubUnitName').append(subOptions);
+            }
+        });
+    }
+</script>
+
+<div id="homepage-index">
+    <div class="text-center">
+        <h1 class="display-4">Welcome</h1>
+        <p>English Companion from <a href="https://voreakou.com">Maria</a>.</p>
+
+    </div>
+    <div class="search-div-homepage">
+        <h2 style="text-align:center">Find a word!</h2>
+        <input class="search-input-home" type="text" placeholder="Search...">
+    </div>
+    <div class="insert-div-homepage">
+        <div class="width-50">
+
+            <!--Insert Book-->
+            <div>
+                <button class="button insert-button" type="button" onclick="openBook()">Insert a Book</button>
+                <form class="disabled"
+                      id="bookform"
+                      method="post"
+                      asp-controller="Tasks" asp-action="InsertBook">
+                    <!--asp-controller: the Name of controller (without the suffix controller)
+                    asp:action: the Name of the action to that controller-->
+                    <div class="inner-form">
+                        <table id="table-insertBook" class="table-form">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <input id="bookName" name="bookName" placeholder="Book Name">
+                                    </td>
+                                    <td>
+                                        <fieldset>
+                                            <select id="bookTypes" name="bookTypeId">
+                                                @if (Model != null)
+                                                {
+                                                    var added = false;
+                                                    <option value="SelectBookType">Book Type</option>
+                                                    foreach (var bt in Model.BookType)
+                                                    {
+                                                        <option value="@bt.BookTypeId">@bt.BookTypeName</option>
+                                                        added = true;
+                                                    }
+                                                    if (!added)
+                                                    {
+                                                        <p>No Books found.</p>
+                                                    }
+                                                }
+                                            </select>
+                                        </fieldset>
+                                    </td>
+                                    <td>
+                                        <fieldset name="bookLanguageId">
+                                            <select class="select-dropdown" id="bookLanguages" name="bookLanguageId">
+                                                @if (Model != null)
+                                                {
+                                                    var added = false;
+                                                    <option value="SelectBookLanguage">Book Language</option>
+                                                    foreach (var bl in Model.BookLanguage)
+                                                    {
+                                                        <option value="@bl.BookLanguageId">@bl.BookLanguageName</option>
+                                                        added = true;
+                                                    }
+                                                    if (!added)
+                                                    {
+                                                        <p>No Languages found.</p>
+                                                    }
+                                                }
+                                            </select>
+                                        </fieldset>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!--SUBMIT-->
+                    <input class="submit-button" id="bookSubmit" type="submit" value="Submit" )>
+                </form>
+            </div>
+            <!--Insert Units-->
+            <div>
+                <button class="button insert-button" onclick="openUnit()" type="button">Insert Units</button>
+                <form class="disabled"
+                      id="unitform"
+                      method="post"
+                      asp-controller="Tasks" asp-action="InsertUnits">
+                    <!--asp-controller: the Name of controller (without the suffix controller)
+                    asp:action: the Name of the action to that controller-->
+                    <div class="inner-form">
+                        <table id="table-insertUnits" class="table-form">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <fieldset>
+                                            <select id="bookNames" name="bookId">
+                                                @if (Model != null)
+                                                {
+                                                    var added = false;
+                                                    <option value="InsertUnitBook">Select Book</option>
+                                                    foreach (var bt in Model.Book)
+                                                    {
+                                                        <option value="@bt.BookId">@bt.BookName</option>
+                                                        added = true;
+                                                    }
+                                                    if (!added)
+                                                    {
+                                                        <p>No Books found.</p>
+                                                    }
+                                                }
+                                            </select>
+                                        </fieldset>
+                                    </td>
+                                    <td>
+                                        <input id="unitName" name="unitName" placeholder="e.g. 1 - Neighbors">
+                                    </td>
+                                    <td>
+                                        <div class="field_wrapper" name="subUnitField">
+                                            <div class="div-subunit">
+                                                <input type="text" id="insertUnitSubUnitName"
+                                                       name="subUnitName"
+                                                       value=""
+                                                       placeholder="e.g. 1a" />
+                                                <a href="javascript:void(0);" class="add_button" title="Add field"><img src="/images/add.png" width="30" /></a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!--SUBMIT-->
+                    <input class="submit-button" id="unitSubmit" type="submit" value="Submit" )>
+                </form>
+            </div>
+        </div>
+
+        <div class="width-50">
+            <!-------------Insert Word-------------->
+            <div>
+                <button id="insertWordButton" class="button insert-button" type="button" onclick="openWord()">Insert a Word</button>
+                <form class="disabled"
+                      id="wordform"
+                      method="post"
+                      asp-controller="Tasks" asp-action="InsertWord">
+                    <!--asp-controller: the Name of controller (without the suffix controller)
+                    asp:action: the Name of the action to that controller-->
+                    <div class="inner-form">
+                        <table id="table-insertWord" class="table-form">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <fieldset class="select-dropdown">
+                                            <select id="wordSelectBooks" name="wordSelectBooks">
+                                                <option value="Select">Select Book</option>
+                                                <!-------------AJAX call-------------->
+                                            </select>
+                                        </fieldset>
+                                    </td>
+                                    <td>
+                                        <fieldset class="select-dropdown">
+                                            <select id="wordSelectUnitName" name="wordSelectUnitName">
+                                                <option value="Select">Select Unit</option>
+                                                <!-------------AJAX call-------------->
+                                            </select>
+                                        </fieldset>
+                                    </td>
+                                    <td>
+                                        <fieldset class="select-dropdown">
+                                            <select id="wordSelectSubUnitName" name="wordSelectSubUnitName">
+                                                <option value="Select">Select SubUnit</option>
+                                                <!-------------AJAX call-------------->
+                                            </select>
+                                        </fieldset>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <input id="wordName" name="wordName" placeholder="Word">
+                                    </td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="outer-definition-div">
+                            <div class="definition-div">
+                                <table class="wordtype-table">
+                                    <tbody>
+                                        <!--WordType row-->
+                                        <tr>
+                                            <td>
+                                                <fieldset>
+                                                    <select id="wordTypes" name="wordTypeId">
+                                                        @if (Model != null)
+                                                        {
+                                                            var added = false;
+                                                            <option value="SelectWordType">Select Word Type</option>
+                                                            foreach (var wt in Model.WordType)
+                                                            {
+                                                                <option value="@wt.WordTypeId">@wt.WordTypeName</option>
+                                                                added = true;
+                                                            }
+                                                            if (!added)
+                                                            {
+                                                                <p>No Word Types found.</p>
+                                                            }
+                                                        }
+                                                    </select>
+                                                </fieldset>
+                                            </td>
+                                            <td>
+                                                <a href="javascript:void(0);" class="definition_add_button" title="Add field"><img src="/images/add.png" width="30" /></a>
+                                            </td>
+                                        </tr>
+                                        <!--Textareas rows-->
+                                        <tr>
+                                            <td>
+                                                <div>
+                                                    <textarea class="definitiontextarea" cols="36" rows="2" name="comment" form="defform" placeholder="Definition"></textarea>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <textarea class="definitiontextarea" cols="36" rows="2" name="comment" form="usrform" placeholder="Example"></textarea>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <!--SUBMIT-->
+                    <input class="submit-button" id="wordSubmit" type="submit" value="Submit" )>
+                </form>
+            </div>
+
+            <!-------------Advanced Search-------------->
+            <div>
+                <div>
+                    <button class="button insert-button" type="button">Advanced Search</button>
+                </div>
+            </div>
+        </div>
+        <p class="clear"></p>
+
+    </div>
+</div>
